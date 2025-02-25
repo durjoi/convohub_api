@@ -1,0 +1,147 @@
+version: '3.8'
+services:
+  convohub:
+    container_name: 'convohub'
+    build:
+      context: .
+    command: sh -c "npm run start:dev"
+    ports:
+      - ${APP_PORT}:${APP_PORT}
+    networks:
+      - convohub-network
+    depends_on:
+      - mysql
+    volumes:
+      - .:/usr/src/app
+    restart: unless-stopped
+
+  mysql:
+    image: mariadb:latest
+    restart: always
+    networks:
+      - convohub-network
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_ROOT_USER=${MYSQL_USERNAME}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_TCP_PORT=${MYSQL_PORT}
+      - MYSQL_UNIX_PORT=${MYSQL_PORT}
+      - TZ=Asia/Dhaka
+    ports:
+      - ${MYSQL_PORT}:${MYSQL_PORT}
+    volumes:
+      - ./mysql_data/db:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    links:
+      - mysql
+    environment:
+      MYSQL_USERNAME: ${MYSQL_USERNAME}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+      PMA_HOST: mysql
+      PMA_PORT: ${MYSQL_PORT:-3306}
+    depends_on:
+      - mysql
+    restart: always
+    networks:
+      - convohub-network
+    ports:
+      - ${PHPMYADMIN_PORT:-8085}:80
+
+  otel-collector:
+    image: otel/opentelemetry-collector:0.96.0
+    command: ['--config=/etc/otel-collector-config.yaml']
+    volumes:
+      - ./etc/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - '4318:4318' # OTLP HTTP receiver
+      - '13133:13133' # health check
+    depends_on:
+      - tempo
+    networks:
+      - convohub-network
+
+  tempo:
+    image: grafana/tempo:latest
+    user: 'root' # Added to handle permission issues
+    command: ['-config.file=/etc/tempo.yaml']
+    volumes:
+      - ./etc/tempo.yaml:/etc/tempo.yaml
+      - tempo-data:/tmp/tempo
+    ports:
+      - '3200:3200' # tempo
+      - '4317:4317' # OTLP grpc
+    environment:
+      - TEMPO_STORAGE_TRACE_BACKEND=local
+    # Add healthcheck to ensure Tempo is running properly
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '--no-verbose',
+          '--tries=1',
+          '--spider',
+          'http://localhost:3200/ready',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - convohub-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./etc/prometheus.yaml:/etc/prometheus.yaml
+    command:
+      - --config.file=/etc/prometheus.yaml
+      - --web.enable-remote-write-receiver
+      - --enable-feature=exemplar-storage
+      - --enable-feature=native-histograms
+    ports:
+      - '9090:9090'
+    networks:
+      - convohub-network
+
+  grafana:
+    image: grafana/grafana:latest
+    volumes:
+      - ./etc/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+    ports:
+      - '3001:3000'
+    depends_on:
+      - tempo
+      - prometheus
+      - otel-collector
+    networks:
+      - convohub-network
+  loki:
+    image: grafana/loki:2.8.5
+    command: -config.file=/etc/loki/loki.yaml
+    ports:
+      - '3100:3100' # loki needs to be exposed so it receives logs
+    environment:
+      - JAEGER_AGENT_HOST=tempo
+      - JAEGER_ENDPOINT=http://tempo:14268/api/traces # send traces to Tempo
+      - JAEGER_SAMPLER_TYPE=const
+      - JAEGER_SAMPLER_PARAM=1
+    volumes:
+      - ./etc/loki.yaml:/etc/loki/loki.yaml
+      - ./data/loki-data:/tmp/loki
+    networks:
+      - convohub-network
+
+volumes:
+  tempo-data:
+    driver: local
+
+
+networks:
+  convohub-network:
+    driver: bridge
