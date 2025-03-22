@@ -49,6 +49,41 @@ services:
     ports:
       - ${PHPMYADMIN_PORT:-8085}:80
 
+  redis:
+    image: redis
+    networks:
+      - convohub-network
+    expose:
+      - '${REDIS_PORT:-6379}:${REDIS_PORT:-6379}'
+    volumes:
+      - ./redis_data:/data
+
+  redis-commander:
+    container_name: redis-commander
+    hostname: redis-commander
+    image: rediscommander/redis-commander:latest
+    restart: always
+    networks:
+      - convohub-network
+    environment:
+      - REDIS_HOSTS=local:redis:${REDIS_PORT:-6379}
+    ports:
+      - '${REDIS_COMMANDAR_PORT:-8081}:${REDIS_COMMANDAR_PORT:-8081}'
+    depends_on:
+      - redis
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: 'rabbitmq_check'
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+      - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+    networks:
+      - convohub-network
+
   otel-collector:
     image: otel/opentelemetry-collector:0.96.0
     command: ['--config=/etc/otel-collector-config.yaml']
@@ -140,7 +175,6 @@ services:
 volumes:
   tempo-data:
     driver: local
-
 
 networks:
   convohub-network:

@@ -18,4 +18,4 @@ scrape_configs:
   - job_name: 'convohub-backend'
     metrics_path: /api/prometheus/metrics
     static_configs:
-    - targets: ['convohub:7050']
+    - targets: ['convohub:7070']

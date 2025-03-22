@@ -4,7 +4,7 @@ otelSDK.start();
 
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './modules/app.module';
-import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { RequestMethod, ValidationPipe, VersioningType } from '@nestjs/common';
 import {
   DocumentBuilder,
   SwaggerDocumentOptions,
@@ -13,6 +13,10 @@ import {
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.setGlobalPrefix('api', {
+    exclude: [{ path: 'api-docs', method: RequestMethod.GET }],
+  });
 
   app.enableVersioning({
     type: VersioningType.URI,

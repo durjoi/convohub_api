@@ -6,6 +6,8 @@ import { PrometheusController } from 'src/modules/prometheus.controller';
 import { PrometheusService } from 'src/common/metrics/prometheus.service';
 import { HttpLoggerMiddleware } from 'src/common/middleware/http-logger.middleware';
 import { MetricsMiddleware } from 'src/common/middleware/metrics.middleware';
+import { PostModule } from './post/post.module';
+import { RabbitmqModule } from 'src/common/providers/rabbitmq/rabbitmq.module';
 dotenv.config();
 
 @Module({
@@ -20,6 +22,8 @@ dotenv.config();
       autoLoadEntities: true,
       // synchronize: true,
     }),
+    PostModule,
+    RabbitmqModule,
   ],
   controllers: [PrometheusController],
   providers: [LoggerService, PrometheusService],
