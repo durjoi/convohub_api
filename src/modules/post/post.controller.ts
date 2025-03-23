@@ -13,9 +13,9 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 
-@Controller('post')
+@Controller('posts')
 export class PostController {
-  constructor(private readonly postService: PostService) {}
+  constructor(private readonly postService: PostService) { }
 
   @RabbitSubscribe({
     exchange: 'post-exchange',

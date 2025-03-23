@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 import * as dotenv from 'dotenv';
+import { Post } from './src/modules/post/entities/post.entity';
 import { DataSource } from 'typeorm';
 
 dotenv.config();
@@ -11,7 +12,7 @@ export default new DataSource({
   username: process.env.MYSQL_USERNAME,
   password: process.env.MYSQL_PASSWORD,
   database: process.env.MYSQL_DATABASE,
-  entities: [],
+  entities: [Post],
   migrationsTableName: 'typeorm_migrations',
-  migrations: ['src/database/migrations/*.ts'],
+  migrations: ['src/database/*.ts'],
 });

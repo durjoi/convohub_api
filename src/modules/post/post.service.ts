@@ -4,37 +4,32 @@ import { UpdatePostDto } from './dto/update-post.dto';
 import { LoggerService } from 'src/common/logger/logger.service';
 // import { RabbitMQProvider } from 'src/common/providers/rabbitmq/rabbitmq.provider';
 import { RabbitmqService } from 'src/common/providers/rabbitmq/rabbitmq.service';
+import { Post } from './entities/post.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class PostService {
   constructor(
     private readonly logger: LoggerService,
     private readonly rabbitmqService: RabbitmqService,
-  ) {}
+    @InjectRepository(Post) private readonly postRepository: Repository<Post>,
+  ) { }
 
   async create(createPostDto: CreatePostDto) {
-    await this.rabbitmqService.publish(
-      'post-exchange',
-      'post_created_routing_key',
-      {
-        data: {
-          title: 'Test title',
-          content: 'Test content',
-          user: 'Test user',
-        },
-      },
-    );
-    return createPostDto;
+    const post = new Post();
+
+    post.title = createPostDto.title;
+    post.content = createPostDto.content;
+
+    const savedPost = await this.postRepository.save(post);
+
+    this.logger.log(`Post Created ${savedPost.id}`);
+    return savedPost;
   }
 
   async findAll() {
-    try {
-      //
-    } catch (err) {
-      this.logger.error(err);
-    }
-    this.logger.log('Test debug log');
-    return `This action returns all post`;
+    return await this.postRepository.find()
   }
 
   findOne(id: number) {
