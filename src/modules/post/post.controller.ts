@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Version,
+  Query,
 } from '@nestjs/common';
 import { PostService } from './post.service';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -34,8 +35,14 @@ export class PostController {
 
   @Get()
   @Version('1')
-  async findAll() {
-    return await this.postService.findAll();
+  async findAll(
+    @Query('page') page: number,
+    @Query('perPage') perPage: number,
+  ) {
+    return await this.postService.findAll(
+      page ? +page : 1,
+      perPage ? +perPage : 10,
+    );
   }
 
   @Get(':id')

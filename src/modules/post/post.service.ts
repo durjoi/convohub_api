@@ -28,8 +28,24 @@ export class PostService {
     return savedPost;
   }
 
-  async findAll() {
-    return await this.postRepository.find()
+  async findAll(page, perPage) {
+    const skip = perPage * (page - 1);
+
+    const [posts, total] = await this.postRepository.findAndCount({
+      order: {
+        createdAt: 'DESC',
+      },
+      skip: skip,
+      take: perPage,
+    });
+
+    return {
+      data: posts,
+      total: total,
+      currentPage: page,
+      perPage: perPage,
+      totalPage: Math.ceil(total / perPage),
+    };
   }
 
   findOne(id: number) {
