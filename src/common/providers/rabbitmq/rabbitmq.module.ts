@@ -1,10 +1,11 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 
 import * as dotenv from 'dotenv';
 import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 import { RabbitmqService } from './rabbitmq.service';
 dotenv.config();
 
+@Global()
 @Module({
   imports: [
     RabbitMQModule.forRoot({

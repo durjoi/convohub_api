@@ -8,6 +8,7 @@ import { HttpLoggerMiddleware } from 'src/common/middleware/http-logger.middlewa
 import { MetricsMiddleware } from 'src/common/middleware/metrics.middleware';
 import { PostModule } from './post/post.module';
 import { RabbitmqModule } from 'src/common/providers/rabbitmq/rabbitmq.module';
+import { RedisModule } from 'src/common/providers/redis/redis.module';
 dotenv.config();
 
 @Module({
@@ -24,6 +25,7 @@ dotenv.config();
     }),
     PostModule,
     RabbitmqModule,
+    RedisModule,
   ],
   controllers: [PrometheusController],
   providers: [LoggerService, PrometheusService],
