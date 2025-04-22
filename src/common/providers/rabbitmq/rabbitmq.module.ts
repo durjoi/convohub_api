@@ -7,19 +7,19 @@ dotenv.config();
 
 @Module({
   imports: [
-    RabbitMQModule.forRoot({
-      exchanges: [
-        {
-          name: 'post-exchange',
-          type: 'topic',
-        },
-      ],
-      uri: process.env.RMQ_URL || '',
-      connectionInitOptions: {
-        wait: false,
-      },
-      enableControllerDiscovery: true,
-    }),
+    // RabbitMQModule.forRoot({
+    //   exchanges: [
+    //     {
+    //       name: 'post-exchange',
+    //       type: 'topic',
+    //     },
+    //   ],
+    //   uri: process.env.RMQ_URL || '',
+    //   connectionInitOptions: {
+    //     wait: false,
+    //   },
+    //   enableControllerDiscovery: true,
+    // }),
   ],
   exports: [RabbitMQModule, RabbitmqService],
   providers: [RabbitmqService],
