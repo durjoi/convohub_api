@@ -1,0 +1,44 @@
+name: Deploy NestJS App to VPS
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  deploy:
+    name: Deploy to Contabo VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ✅ Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🔐 Set up SSH agent
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+
+      - name: 🚀 Deploy to VPS (single SSH session)
+        run: |
+          ssh -o StrictHostKeyChecking=no root@144.91.67.6 << 'EOF'
+            echo "Step 1: Navigate to app directory"
+            cd /var/convohub || exit 1
+
+            echo "Step 2: Pull latest code from develop"
+            git pull origin develop || exit 1
+
+            echo "Step 3: Install dependencies"
+            npm install || exit 1
+
+            echo "Step 4: Build the app"
+            npm run build || exit 1
+
+            echo "Step 5: Run DB migrations"
+            npm run migration:run || exit 1
+
+            echo "Step 6: Restart app with PM2"
+            pm2 restart 0 || exit 1
+
+            echo "Deployment successful!"
+          EOF
