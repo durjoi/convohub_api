@@ -1,52 +1,55 @@
-name: Deploy NestJS App to VPS
+name: Deploy Convohub API to Production
 
 on:
   push:
     branches:
       - develop
 
+
 jobs:
   deploy:
-    name: Deploy to Contabo VPS
+    name: Deploy to Production
     runs-on: ubuntu-latest
 
     steps:
-      - name: ✅ Checkout Repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: 🔐 Set up SSH agent
+      - name: Setup SSH 
         uses: webfactory/ssh-agent@v0.9.1
         with:
           ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
 
-      - name: 🚀 Deploy to VPS (single SSH session)
+      - name: Deploying to Server
         run: |
           ssh -o StrictHostKeyChecking=no root@144.91.67.6 << 'EOF'
+            
+            echo "Step 0: Source NVM"
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" 
+            [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" 
+
+            echo "Step 0.1: Use correct Node version"
+            nvm use v18.13.0 || exit 1
+
             echo "Step 1: Navigate to app directory"
             cd /var/convohub || exit 1
 
-            echo "Step 2: Source nvm"
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
-            [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-
-            echo "Step 3: Use correct Node version"
-            nvm use v18.20.8 || exit 1  
-
-            echo "Step 4: Pull latest code"
+            echo "Step 2: Pulling latest code"
             git pull origin develop || exit 1
 
-            echo "Step 5: Install dependencies"
+            echo "Step 3: Installing packages"
             npm install || exit 1
 
-            echo "Step 6: Build app"
+            echo "Step 4: Building app"
             npm run build || exit 1
 
-            echo "Step 7: Run migrations"
+            echo "Step 5: Running migrations"
             npm run migration:run || exit 1
 
-            echo "Step 8: Restart app with PM2"
-            pm2 restart 0 || exit 1
+            echo "Step 6: Restarting the app with pm2"
+            pm2 restart 0
 
-            echo "✅ Deployment successful!"
           EOF
+      
+
