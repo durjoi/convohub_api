@@ -30,7 +30,7 @@ jobs:
             [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" 
 
             echo "Step 0.1: Use correct Node version"
-            nvm use v18.13.0 || exit 1
+            nvm use v18.20.8 || exit 1
 
             echo "Step 1: Navigate to app directory"
             cd /var/convohub || exit 1
